@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAMB CBT Practice</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .question-card {
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .option-label {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .option-label:hover {
+            background-color: #e9ecef;
+        }
+        .feedback {
+            display: none;
+            margin-top: 10px;
+        }
+        #timer {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .pagination-container {
+            max-width: 800px;
+            margin: 0 auto 20px;
+        }
+        .pagination {
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">JAMB CBT Practice Session</span>
+            <span id="timer" class="text-white">02:00:00</span>
+        </div>
+    </nav>
+
+    <!-- Question Display -->
+    <div class="container">
+        <div id="question-card" class="question-card card d-none">
+            <div class="card-header">
+                <h5>Question <span id="question-number"></span> of <span id="total-questions"></span> (<span id="subject"></span>)</h5>
+            </div>
+            <div class="card-body">
+                <p id="question-text" class="card-text"></p>
+                <form id="answer-form">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="answer" id="optionA" value="A">
+                        <label class="form-check-label option-label" for="optionA" id="optionA-text"></label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="answer" id="optionB" value="B">
+                        <label class="form-check-label option-label" for="optionB" id="optionB-text"></label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="answer" id="optionC" value="C">
+                        <label class="form-check-label option-label" for="optionC" id="optionC-text"></label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="answer" id="optionD" value="D">
+                        <label class="form-check-label option-label" for="optionD" id="optionD-text"></label>
+                    </div>
+                </form>
+                <div id="feedback" class="feedback"></div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <button id="skip-btn" class="btn btn-secondary">Skip</button>
+                <button id="submit-btn" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+        <!-- Pagination -->
+        <div class="pagination-container">
+            <nav aria-label="Question navigation">
+                <ul id="pagination" class="pagination"></ul>
+            </nav>
+        </div>
+        <!-- Start Button -->
+        <div id="start-screen" class="text-center mt-5">
+            <h2>Welcome to JAMB CBT Practice</h2>
+            <p>You will answer 180 questions (60 English, 40 each for Physics, Mathematics, Chemistry) in 2 hours.</p>
+            <button id="start-btn" class="btn btn-success btn-lg">Start Quiz</button>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal fade" id="resultsModal" tabindex="-1" aria-labelledby="resultsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultsModalLabel">Quiz Results</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Total Score:</strong> <span id="total-score"></span></p>
+                    <p><strong>Time Taken:</strong> <span id="time-taken"></span></p>
+                    <h6>Subject Scores:</h6>
+                    <ul id="subject-scores" class="list-group"></ul>
+                    <h6 class="mt-3">Detailed Results:</h6>
+                    <div id="detailed-results" class="accordion"></div>
+                </div>
+                <div class="modal-footer">
+                    <button id="download-btn" class="btn btn-primary">Download Results</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const questionData = [
+            {
+                "subject": "Physics",
+                "questions": [
+                    {"question": "What is the acceleration of a car moving at a constant velocity of 20 m/s?", "options": ["A. 0 m/s²", "B. 20 m/s²", "C. 10 m/s²", "D. 5 m/s²"], "answer": "A. 0 m/s²"},
+                    {"question": "A stone is thrown vertically upward with an initial velocity of 30 m/s. What is its velocity at the highest point?", "options": ["A. 30 m/s", "B. 0 m/s", "C. -30 m/s", "D. 15 m/s"], "answer": "B. 0 m/s"},
+                    {"question": "The unit of electric field strength is:", "options": ["A. N/C", "B. J/C", "C. V/m", "D. Both A and C"], "answer": "D. Both A and C"},
+                    {"question": "What is the frequency of a wave with a wavelength of 2 m traveling at 340 m/s?", "options": ["A. 170 Hz", "B. 340 Hz", "C. 680 Hz", "D. 85 Hz"], "answer": "A. 170 Hz"},
+                    {"question": "A body of mass 5 kg is acted upon by a force of 20 N. What is its acceleration?", "options": ["A. 4 m/s²", "B. 100 m/s²", "C. 0.25 m/s²", "D. 25 m/s²"], "answer": "A. 4 m/s²"},
+                    {"question": "The specific heat capacity of water is 4200 J/kg·K. How much heat is required to raise the temperature of 2 kg of water by 10 K?", "options": ["A. 84,000 J", "B. 42,000 J", "C. 8,400 J", "D. 420,000 J"], "answer": "A. 84,000 J"},
+                    {"question": "In a simple pendulum, the period depends on:", "options": ["A. Mass of the bob", "B. Length of the string", "C. Amplitude", "D. Weight of the bob"], "answer": "B. Length of the string"},
+                    {"question": "The image formed by a convex mirror is always:", "options": ["A. Real and inverted", "B. Virtual and erect", "C. Real and erect", "D. Virtual and inverted"], "answer": "B. Virtual and erect"},
+                    {"question": "What is the power dissipated in a 10 Ω resistor with a current of 2 A?", "options": ["A. 40 W", "B. 20 W", "C. 5 W", "D. 80 W"], "answer": "A. 40 W"},
+                    {"question": "The principle of conservation of energy is best illustrated by:", "options": ["A. Newton’s first law", "B. Bernoulli’s principle", "C. Archimedes’ principle", "D. Hooke’s law"], "answer": "B. Bernoulli’s principle"},
+                    {"question": "What is the work done by a force of 50 N moving an object 4 m in the direction of the force?", "options": ["A. 200 J", "B. 50 J", "C. 12.5 J", "D. 400 J"], "answer": "A. 200 J"},
+                    {"question": "The speed of sound in air at 20°C is approximately:", "options": ["A. 343 m/s", "B. 300 m/s", "C. 400 m/s", "D. 200 m/s"], "answer": "A. 343 m/s"},
+                    {"question": "A charge of 2 C experiences a force of 10 N in an electric field. What is the electric field strength?", "options": ["A. 5 N/C", "B. 2 N/C", "C. 20 N/C", "D. 10 N/C"], "answer": "A. 5 N/C"},
+                    {"question": "The half-life of a radioactive substance is 12 hours. How much of a 100 g sample remains after 24 hours?", "options": ["A. 50 g", "B. 25 g", "C. 12.5 g", "D. 75 g"], "answer": "B. 25 g"},
+                    {"question": "Which of the following is a vector quantity?", "options": ["A. Speed", "B. Mass", "C. Velocity", "D. Energy"], "answer": "C. Velocity"},
+                    {"question": "The focal length of a concave lens is always:", "options": ["A. Positive", "B. Negative", "C. Zero", "D. Infinite"], "answer": "B. Negative"},
+                    {"question": "What is the potential difference across a 5 Ω resistor carrying 3 A of current?", "options": ["A. 15 V", "B. 5 V", "C. 3 V", "D. 10 V"], "answer": "A. 15 V"},
+                    {"question": "The efficiency of a machine is 80%. If the input work is 500 J, what is the output work?", "options": ["A. 400 J", "B. 500 J", "C. 625 J", "D. 300 J"], "answer": "A. 400 J"},
+                    {"question": "The critical angle for a medium is 45°. What happens to light at an angle greater than 45°?", "options": ["A. Refraction", "B. Total internal reflection", "C. Dispersion", "D. Diffraction"], "answer": "B. Total internal reflection"},
+                    {"question": "A transformer has 100 primary turns and 400 secondary turns. If the primary voltage is 12 V, what is the secondary voltage?", "options": ["A. 48 V", "B. 3 V", "C. 12 V", "D. 24 V"], "answer": "A. 48 V"},
+                    {"question": "What is the momentum of a 2 kg object moving at 5 m/s?", "options": ["A. 10 kg·m/s", "B. 2.5 kg·m/s", "C. 7 kg·m/s", "D. 25 kg·m/s"], "answer": "A. 10 kg·m/s"},
+                    {"question": "The SI unit of pressure is:", "options": ["A. Newton", "B. Pascal", "C. Joule", "D. Watt"], "answer": "B. Pascal"},
+                    {"question": "A wave has a period of 0.02 s. What is its frequency?", "options": ["A. 50 Hz", "B. 0.02 Hz", "C. 20 Hz", "D. 100 Hz"], "answer": "A. 50 Hz"},
+                    {"question": "Which of the following is a renewable energy source?", "options": ["A. Coal", "B. Solar", "C. Natural gas", "D. Petroleum"], "answer": "B. Solar"},
+                    {"question": "The resistivity of a material depends on:", "options": ["A. Length", "B. Area", "C. Temperature", "D. Current"], "answer": "C. Temperature"},
+                    {"question": "What is the kinetic energy of a 4 kg object moving at 3 m/s?", "options": ["A. 18 J", "B. 36 J", "C. 12 J", "D. 24 J"], "answer": "A. 18 J"},
+                    {"question": "The boiling point of water at standard pressure is:", "options": ["A. 0°C", "B. 100°C", "C. 50°C", "D. 25°C"], "answer": "B. 100°C"},
+                    {"question": "Which particle is emitted in beta decay?", "options": ["A. Alpha particle", "B. Neutron", "C. Electron", "D. Proton"], "answer": "C. Electron"},
+                    {"question": "The magnification of a lens is 2. If the object distance is 10 cm, what is the image distance?", "options": ["A. 20 cm", "B. 5 cm", "C. 10 cm", "D. 15 cm"], "answer": "A. 20 cm"},
+                    {"question": "A body falls freely under gravity (g = 10 m/s²). What is its velocity after 2 seconds?", "options": ["A. 20 m/s", "B. 10 m/s", "C. 5 m/s", "D. 40 m/s"], "answer": "A. 20 m/s"},
+                    {"question": "The SI unit of magnetic flux is:", "options": ["A. Tesla", "B. Weber", "C. Henry", "D. Gauss"], "answer": "B. Weber"},
+                    {"question": "What is the resultant force when two forces of 3 N and 4 N act at right angles?", "options": ["A. 5 N", "B. 7 N", "C. 12 N", "D. 1 N"], "answer": "A. 5 N"},
+                    {"question": "The speed of light in a vacuum is:", "options": ["A. 3 × 10⁸ m/s", "B. 3 × 10⁶ m/s", "C. 3 × 10¹⁰ m/s", "D. 3 × 10⁷ m/s"], "answer": "A. 3 × 10⁸ m/s"},
+                    {"question": "A capacitor stores a charge of 2 µC at 10 V. What is its capacitance?", "options": ["A. 0.2 µF", "B. 2 µF", "C. 20 µF", "D. 0.02 µF"], "answer": "A. 0.2 µF"},
+                    {"question": "The latent heat of fusion is associated with:", "options": ["A. Gas to liquid", "B. Solid to liquid", "C. Liquid to gas", "D. Solid to gas"], "answer": "B. Solid to liquid"},
+                    {"question": "What is the angle of incidence when the angle of refraction is 30° and the refractive index is 1.5?", "options": ["A. 48.6°", "B. 20°", "C. 30°", "D. 60°"], "answer": "A. 48.6°"},
+                    {"question": "The energy stored in a spring with spring constant 200 N/m stretched by 0.1 m is:", "options": ["A. 1 J", "B. 2 J", "C. 0.5 J", "D. 4 J"], "answer": "A. 1 J"},
+                    {"question": "Which of the following is a scalar quantity?", "options": ["A. Force", "B. Velocity", "C. Mass", "D. Acceleration"], "answer": "C. Mass"},
+                    {"question": "The wavelength of a sound wave is 0.5 m, and its speed is 340 m/s. What is its frequency?", "options": ["A. 680 Hz", "B. 170 Hz", "C. 340 Hz", "D. 85 Hz"], "answer": "A. 680 Hz"},
+                    {"question": "A 12 V battery supplies a current of 2 A. What is the power delivered?", "options": ["A. 24 W", "B. 6 W", "C. 12 W", "D. 48 W"], "answer": "A. 24 W"},
+                    {"question": "The principle of flotation is based on:", "options": ["A. Newton’s laws", "B. Archimedes’ principle", "C. Pascal’s principle", "D. Bernoulli’s principle"], "answer": "B. Archimedes’ principle"}
+                ]
+            },
+            {
+                "subject": "Mathematics",
+                "questions": [
+                    {"question": "Solve the equation 2x² - 8x + 6 = 0.", "options": ["A. x = 1, 3", "B. x = 2, 3", "C. x = 1, 2", "D. x = 3, 4"], "answer": "A. x = 1, 3"},
+                    {"question": "What is the value of log₂(8)?", "options": ["A. 2", "B. 3", "C. 4", "D. 1"], "answer": "B. 3"},
+                    {"question": "The gradient of the line 3x - 2y + 6 = 0 is:", "options": ["A. 3/2", "B. -3/2", "C. 2/3", "D. -2/3"], "answer": "A. 3/2"},
+                    {"question": "If sin θ = 3/5, what is cos θ?", "options": ["A. 4/5", "B. 3/4", "C. 5/3", "D. 2/5"], "answer": "A. 4/5"},
+                    {"question": "The sum of the first 10 terms of an arithmetic progression with first term 2 and common difference 3 is:", "options": ["A. 155", "B. 165", "C. 145", "D. 175"], "answer": "A. 155"},
+                    {"question": "What is the derivative of x³ + 2x² - 5?", "options": ["A. 3x² + 4x", "B. 3x² + 2x", "C. x² + 4x", "D. 3x² + 4"], "answer": "A. 3x² + 4x"},
+                    {"question": "The mean of the numbers 2, 4, 6, 8, 10 is:", "options": ["A. 6", "B. 5", "C. 7", "D. 8"], "answer": "A. 6"},
+                    {"question": "The area of a circle with radius 7 cm is:", "options": ["A. 154 cm²", "B. 44 cm²", "C. 77 cm²", "D. 22 cm²"], "answer": "A. 154 cm²"},
+                    {"question": "If A = {1, 2, 3} and B = {2, 3, 4}, what is A ∩ B?", "options": ["A. {1, 4}", "B. {2, 3}", "C. {1, 2, 3, 4}", "D. {}"], "answer": "B. {2, 3}"},
+                    {"question": "The probability of picking a red ball from a bag containing 3 red and 2 blue balls is:", "options": ["A. 3/5", "B. 2/5", "C. 1/3", "D. 2/3"], "answer": "A. 3/5"},
+                    {"question": "Simplify (2x + 3)(x - 4).", "options": ["A. 2x² - 5x - 12", "B. 2x² + 5x - 12", "C. 2x² - 5x + 12", "D. 2x² + 5x + 12"], "answer": "A. 2x² - 5x - 12"},
+                    {"question": "What is the value of 2⁵?", "options": ["A. 32", "B. 16", "C. 64", "D. 25"], "answer": "A. 32"},
+                    {"question": "The roots of the equation x² - 5x + 6 = 0 are:", "options": ["A. 2, 3", "B. 1, 6", "C. 3, 5", "D. -2, -3"], "answer": "A. 2, 3"},
+                    {"question": "What is the area of a triangle with base 8 cm and height 5 cm?", "options": ["A. 20 cm²", "B. 40 cm²", "C. 13 cm²", "D. 25 cm²"], "answer": "A. 20 cm²"},
+                    {"question": "If cos θ = 12/13, what is sin θ?", "options": ["A. 5/13", "B. 12/13", "C. 13/12", "D. 5/12"], "answer": "A. 5/13"},
+                    {"question": "The integral of 3x² dx is:", "options": ["A. x³ + C", "B. 3x³ + C", "C. x² + C", "D. 3x + C"], "answer": "A. x³ + C"},
+                    {"question": "What is the median of the numbers 3, 7, 1, 9, 5?", "options": ["A. 5", "B. 7", "C. 3", "D. 9"], "answer": "A. 5"},
+                    {"question": "The distance between points (2, 3) and (5, 7) is:", "options": ["A. 5", "B. 3", "C. 4", "D. 6"], "answer": "A. 5"},
+                    {"question": "If 3x + 2 = 11, what is x?", "options": ["A. 3", "B. 4", "C. 5", "D. 2"], "answer": "A. 3"},
+                    {"question": "The sum of angles in a triangle is:", "options": ["A. 180°", "B. 360°", "C. 90°", "D. 270°"], "answer": "A. 180°"},
+                    {"question": "What is the value of tan 45°?", "options": ["A. 1", "B. 0", "C. √2", "D. 1/√2"], "answer": "A. 1"},
+                    {"question": "The number of subsets of a set with 3 elements is:", "options": ["A. 8", "B. 6", "C. 4", "D. 3"], "answer": "A. 8"},
+                    {"question": "What is the value of 5! (5 factorial)?", "options": ["A. 120", "B. 60", "C. 24", "D. 720"], "answer": "A. 120"},
+                    {"question": "The equation of a circle with center (0, 0) and radius 5 is:", "options": ["A. x² + y² = 25", "B. x² + y² = 5", "C. x² + y² = 10", "D. x + y = 25"], "answer": "A. x² + y² = 25"},
+                    {"question": "If f(x) = 2x + 3, what is f(4)?", "options": ["A. 11", "B. 8", "C. 5", "D. 7"], "answer": "A. 11"},
+                    {"question": "The variance of a set of numbers measures:", "options": ["A. Spread", "B. Average", "C. Sum", "D. Median"], "answer": "A. Spread"},
+                    {"question": "What is the value of 2 + 3 × 4?", "options": ["A. 20", "B. 14", "C. 18", "D. 10"], "answer": "B. 14"},
+                    {"question": "The common ratio of the geometric sequence 2, 6, 18, … is:", "options": ["A. 3", "B. 2", "C. 6", "D. 9"], "answer": "A. 3"},
+                    {"question": "What is the slope of the line passing through (1, 2) and (3, 6)?", "options": ["A. 2", "B. 1", "C. 3", "D. 4"], "answer": "A. 2"},
+                    {"question": "The value of (1/2)⁻² is:", "options": ["A. 4", "B. 1/4", "C. 2", "D. 1/2"], "answer": "A. 4"},
+                    {"question": "What is the sum of the interior angles of a pentagon?", "options": ["A. 540°", "B. 360°", "C. 720°", "D. 180°"], "answer": "A. 540°"},
+                    {"question": "The probability of rolling a 6 on a fair die is:", "options": ["A. 1/6", "B. 1/3", "C. 1/2", "D. 1/4"], "answer": "A. 1/6"},
+                    {"question": "What is the value of cos 60°?", "options": ["A. 1/2", "B. √3/2", "C. 1", "D. 0"], "answer": "A. 1/2"},
+                    {"question": "The derivative of sin x is:", "options": ["A. cos x", "B. -sin x", "C. -cos x", "D. sin x"], "answer": "A. cos x"},
+                    {"question": "What is the value of 3/4 + 1/2?", "options": ["A. 5/4", "B. 3/2", "C. 1/4", "D. 2/3"], "answer": "A. 5/4"},
+                    {"question": "The number of ways to arrange 4 distinct objects is:", "options": ["A. 24", "B. 12", "C. 6", "D. 8"], "answer": "A. 24"},
+                    {"question": "What is the value of 10% of 200?", "options": ["A. 20", "B. 10", "C. 30", "D. 40"], "answer": "A. 20"},
+                    {"question": "The equation of a line with slope 2 and y-intercept 3 is:", "options": ["A. y = 2x + 3", "B. y = 3x + 2", "C. y = 2x - 3", "D. y = 3x - 2"], "answer": "A. y = 2x + 3"},
+                    {"question": "What is the value of 2³ × 3²?", "options": ["A. 72", "B. 36", "C. 18", "D. 48"], "answer": "A. 72"},
+                    {"question": "The mode of the numbers 2, 3, 3, 4, 5 is:", "options": ["A. 3", "B. 2", "C. 4", "D. 5"], "answer": "A. 3"}
+                ]
+            },
+            {
+                "subject": "English",
+                "questions": [
+                    {"question": "In The Lekki Headmaster, who is the protagonist?", "options": ["A. Mrs. Grace Apeh", "B. Mr. Bepo Adewale", "C. Angel", "D. Tosh"], "answer": "B. Mr. Bepo Adewale"},
+                    {"question": "What is a major theme in The Lekki Headmaster?", "options": ["A. Time travel", "B. Leadership", "C. Supernatural events", "D. Space exploration"], "answer": "B. Leadership"},
+                    {"question": "Choose the correct synonym for 'benevolent.'", "options": ["A. Cruel", "B. Kind", "C. Greedy", "D. Arrogant"], "answer": "B. Kind"},
+                    {"question": "Which word is the odd one out?", "options": ["A. Big", "B. Large", "C. Small", "D. Huge"], "answer": "C. Small"},
+                    {"question": "In The Lekki Headmaster, what does the 'Japa' syndrome refer to?", "options": ["A. A new teaching method", "B. Relocating abroad", "C. A school policy", "D. A local festival"], "answer": "B. Relocating abroad"},
+                    {"question": "Fill in the blank: She ___ to the market yesterday.", "options": ["A. Go", "B. Goes", "C. Went", "D. Going"], "answer": "C. Went"},
+                    {"question": "What is the literary device used in 'The school was a sea of students'?", "options": ["A. Simile", "B. Metaphor", "C. Personification", "D. Alliteration"], "answer": "B. Metaphor"},
+                    {"question": "In The Lekki Headmaster, who is the Vice Principal?", "options": ["A. Mrs. Ibidun Gloss", "B. Mrs. Grace Apeh", "C. Mr. Ogunwale", "D. Banky"], "answer": "B. Mrs. Grace Apeh"},
+                    {"question": "Choose the correct spelling.", "options": ["A. Occasion", "B. Occassion", "C. Ocation", "D. Ocasion"], "answer": "A. Occasion"},
+                    {"question": "What is the antonym of 'transparent'?", "options": ["A. Clear", "B. Opaque", "C. Visible", "D. Bright"], "answer": "B. Opaque"},
+                    {"question": "In The Lekki Headmaster, where is Stardom Schools located?", "options": ["A. Abuja", "B. Lekki, Lagos", "C. Ibadan", "D. Port Harcourt"], "answer": "B. Lekki, Lagos"},
+                    {"question": "Choose the correct form: The book ___ on the table.", "options": ["A. Is", "B. Are", "C. Were", "D. Be"], "answer": "A. Is"},
+                    {"question": "What is the synonym for 'abundant'?", "options": ["A. Scarce", "B. Plentiful", "C. Rare", "D. Limited"], "answer": "B. Plentiful"},
+                    {"question": "In The Lekki Headmaster, why does Bepo consider leaving Nigeria?", "options": ["A. To start a new school", "B. For better opportunities abroad", "C. To escape a scandal", "D. For a vacation"], "answer": "B. For better opportunities abroad"},
+                    {"question": "Identify the part of speech of 'quickly' in 'She runs quickly.'", "options": ["A. Noun", "B. Verb", "C. Adverb", "D. Adjective"], "answer": "C. Adverb"},
+                    {"question": "What is the literary device in 'The wind whispered through the trees'?", "options": ["A. Metaphor", "B. Personification", "C. Simile", "D. Hyperbole"], "answer": "B. Personification"},
+                    {"question": "Choose the correct plural form of 'child.'", "options": ["A. Childs", "B. Children", "C. Childes", "D. Childrens"], "answer": "B. Children"},
+                    {"question": "In The Lekki Headmaster, what is the Stardom Cooperative Society?", "options": ["A. A bank", "B. A staff financial group", "C. A student club", "D. A government agency"], "answer": "B. A staff financial group"},
+                    {"question": "What is the antonym of 'expand'?", "options": ["A. Grow", "B. Contract", "C. Increase", "D. Extend"], "answer": "B. Contract"},
+                    {"question": "The stress pattern of 'democracy' is:", "options": ["A. DE-mo-cra-cy", "B. de-MO-cra-cy", "C. de-mo-CRA-cy", "D. de-mo-cra-CY"], "answer": "B. de-MO-cra-cy"},
+                    {"question": "In The Lekki Headmaster, what does the send-off ceremony signify?", "options": ["A. A new principal’s arrival", "B. Bepo’s contributions", "C. A school merger", "D. A holiday"], "answer": "B. Bepo’s contributions"},
+                    {"question": "Choose the correct sentence:", "options": ["A. He don’t like to read.", "B. He doesn’t like to read.", "C. He not like to read.", "D. He isn’t like to read."], "answer": "B. He doesn’t like to read."},
+                    {"question": "What is the synonym for 'courageous'?", "options": ["A. Fearful", "B. Brave", "C. Weak", "D. Timid"], "answer": "B. Brave"},
+                    {"question": "In The Lekki Headmaster, who is Angel?", "options": ["A. A teacher", "B. A student", "C. The headmaster’s wife", "D. A parent"], "answer": "B. A student"},
+                    {"question": "What is the literary device in 'Her smile was as bright as the sun'?", "options": ["A. Metaphor", "B. Simile", "C. Personification", "D. Alliteration"], "answer": "B. Simile"},
+                    {"question": "Choose the correct form: They ___ playing football.", "options": ["A. Is", "B. Are", "C. Was", "D. Be"], "answer": "B. Are"},
+                    {"question": "What is the antonym of 'generous'?", "options": ["A. Kind", "B. Selfish", "C. Giving", "D. Charitable"], "answer": "B. Selfish"},
+                    {"question": "In The Lekki Headmaster, what lesson is taught about democracy?", "options": ["A. It is irrelevant", "B. Free and fair elections matter", "C. Authoritarianism is better", "D. Voting is discouraged"], "answer": "B. Free and fair elections matter"},
+                    {"question": "The word 'photograph' is stressed on which syllable?", "options": ["A. PHO-to-graph", "B. pho-TO-graph", "C. pho-to-GRAPH", "D. PHO-TO-GRAPH"], "answer": "B. pho-TO-graph"},
+                    {"question": "What is the synonym for 'authentic'?", "options": ["A. Fake", "B. Genuine", "C. Copied", "D. False"], "answer": "B. Genuine"},
+                    {"question": "In The Lekki Headmaster, what is a depicted societal issue?", "options": ["A. Technological advancement", "B. Corruption", "C. Cultural festivals", "D. Sports development"], "answer": "B. Corruption"},
+                    {"question": "Choose the correct form: I ___ a letter yesterday.", "options": ["A. Write", "B. Wrote", "C. Written", "D. Writing"], "answer": "B. Wrote"},
+                    {"question": "What is the literary device in 'Time flies when you’re having fun'?", "options": ["A. Simile", "B. Metaphor", "C. Personification", "D. Hyperbole"], "answer": "C. Personification"},
+                    {"question": "What is the antonym of 'ancient'?", "options": ["A. Old", "B. Modern", "C. Historic", "D. Aged"], "answer": "B. Modern"},
+                    {"question": "In The Lekki Headmaster, what motivates Bepo’s leadership?", "options": ["A. Fame", "B. Improving education", "C. Politics", "D. Money"], "answer": "B. Improving education"},
+                    {"question": "Choose the correct spelling.", "options": ["A. Recieve", "B. Receive", "C. Recive", "D. Receeve"], "answer": "B. Receive"},
+                    {"question": "What is the synonym for 'persistent'?", "options": ["A. Temporary", "B. Determined", "C. Weak", "D. Uncertain"], "answer": "B. Determined"},
+                    {"question": "In The Lekki Headmaster, where does Bepo give an emotional speech?", "options": ["A. Courtroom", "B. School hall", "C. Church", "D. Market"], "answer": "B. School hall"},
+                    {"question": "The stress pattern of 'biology' is:", "options": ["A. BI-o-lo-gy", "B. bi-O-lo-gy", "C. bi-o-LO-gy", "D. bi-o-lo-GY"], "answer": "B. bi-O-lo-gy"},
+                    {"question": "What is the antonym of 'frequent'?", "options": ["A. Common", "B. Rare", "C. Regular", "D. Often"], "answer": "B. Rare"}
+                ]
+            },
+            {
+                "subject": "Chemistry",
+                "questions": [
+                    {"question": "What is the atomic number of an element with 11 protons and 12 neutrons?", "options": ["A. 11", "B. 12", "C. 23", "D. 1"], "answer": "A. 11"},
+                    {"question": "Which gas is produced when dilute HCl reacts with Na₂CO₃?", "options": ["A. Oxygen", "B. Hydrogen", "C. Carbon dioxide", "D. Nitrogen"], "answer": "C. Carbon dioxide"},
+                    {"question": "The type of bond in methane (CH₄) is:", "options": ["A. Ionic", "B. Covalent", "C. Metallic", "D. Hydrogen"], "answer": "B. Covalent"},
+                    {"question": "What is the molar mass of H₂SO₄?", "options": ["A. 98 g/mol", "B. 96 g/mol", "C. 100 g/mol", "D. 88 g/mol"], "answer": "A. 98 g/mol"},
+                    {"question": "Which of the following is an alkene?", "options": ["A. C₂H₆", "B. C₂H₄", "C. C₃H₈", "D. C₄H₁₀"], "answer": "B. C₂H₄"},
+                    {"question": "The pH of a neutral solution is:", "options": ["A. 0", "B. 7", "C. 14", "D. 1"], "answer": "B. 7"},
+                    {"question": "What is the oxidation number of chlorine in KClO₃?", "options": ["A. +1", "B. +5", "C. -1", "D. +7"], "answer": "B. +5"},
+                    {"question": "Which element is a noble gas?", "options": ["A. Nitrogen", "B. Helium", "C. Oxygen", "D. Fluorine"], "answer": "B. Helium"},
+                    {"question": "The process of converting a gas to a liquid is called:", "options": ["A. Sublimation", "B. Condensation", "C. Evaporation", "D. Deposition"], "answer": "B. Condensation"},
+                    {"question": "What volume of 0.1 M NaOH is needed to neutralize 20 cm³ of 0.2 M HCl?", "options": ["A. 40 cm³", "B. 20 cm³", "C. 10 cm³", "D. 80 cm³"], "answer": "A. 40 cm³"},
+                    {"question": "The chemical formula for ethanoic acid is:", "options": ["A. CH₃COOH", "B. C₂H₅OH", "C. CH₃OH", "D. C₃H₈"], "answer": "A. CH₃COOH"},
+                    {"question": "Which of the following is a greenhouse gas?", "options": ["A. Nitrogen", "B. Oxygen", "C. Carbon dioxide", "D. Argon"], "answer": "C. Carbon dioxide"},
+                    {"question": "The Avogadro constant is:", "options": ["A. 6.02 × 10²³ mol⁻¹", "B. 6.02 × 10²² mol⁻¹", "C. 6.02 × 10²⁴ mol⁻¹", "D. 6.02 × 10²¹ mol⁻¹"], "answer": "A. 6.02 × 10²³ mol⁻¹"},
+                    {"question": "What is the product of the electrolysis of aqueous NaCl using carbon electrodes?", "options": ["A. Sodium and oxygen", "B. Chlorine and hydrogen", "C. Sodium and chlorine", "D. Hydrogen and oxygen"], "answer": "B. Chlorine and hydrogen"},
+                    {"question": "Which of the following is a transition metal?", "options": ["A. Sodium", "B. Iron", "C. Calcium", "D. Potassium"], "answer": "B. Iron"},
+                    {"question": "The functional group in alcohols is:", "options": ["A. -COOH", "B. -OH", "C. -CHO", "D. -NH₂"], "answer": "B. -OH"},
+                    {"question": "What is the mass of 2 moles of CO₂ (molar mass = 44 g/mol)?", "options": ["A. 88 g", "B. 44 g", "C. 22 g", "D. 66 g"], "answer": "A. 88 g"},
+                    {"question": "Which of the following is an exothermic reaction?", "options": ["A. Decomposition of CaCO₃", "B. Combustion of methane", "C. Electrolysis of water", "D. Photosynthesis"], "answer": "B. Combustion of methane"},
+                    {"question": "The shape of an ammonia (NH₃) molecule is:", "options": ["A. Linear", "B. Trigonal pyramidal", "C. Tetrahedral", "D. Bent"], "answer": "B. Trigonal pyramidal"},
+                    {"question": "What is the empirical formula of a compound with 40% carbon, 6.67% hydrogen, and 53.33% oxygen?", "options": ["A. CH₂O", "B. C₂H₄O₂", "C. CH₄O", "D. C₃H₆O₃"], "answer": "A. CH₂O"},
+                    {"question": "Which gas is used in welding?", "options": ["A. Oxygen", "B. Acetylene", "C. Nitrogen", "D. Carbon dioxide"], "answer": "B. Acetylene"},
+                    {"question": "The rate of a chemical reaction increases with:", "options": ["A. Lower temperature", "B. Higher concentration", "C. Smaller surface area", "D. Lower pressure"], "answer": "B. Higher concentration"},
+                    {"question": "What is the oxidation number of sulfur in SO₂?", "options": ["A. +2", "B. +4", "C. +6", "D. -2"], "answer": "B. +4"},
+                    {"question": "Which of the following is a polymer?", "options": ["A. Glucose", "B. Polythene", "C. Ethanol", "D. Methane"], "answer": "B. Polythene"},
+                    {"question": "The main source of chlorine in the laboratory is:", "options": ["A. NaCl", "B. KMnO₄", "C. HCl", "D. KClO₃"], "answer": "D. KClO₃"},
+                    {"question": "What is the IUPAC name for CH₃CH₂CH₂OH?", "options": ["A. Propan-1-ol", "B. Propan-2-ol", "C. Ethanol", "D. Methanol"], "answer": "A. Propan-1-ol"},
+                    {"question": "The process of separating crude oil into fractions is called:", "options": ["A. Cracking", "B. Fractional distillation", "C. Polymerization", "D. Saponification"], "answer": "B. Fractional distillation"},
+                    {"question": "Which element has the electron configuration 1s² 2s² 2p⁶ 3s² 3p⁵?", "options": ["A. Fluorine", "B. Chlorine", "C. Sulfur", "D. Phosphorus"], "answer": "B. Chlorine"},
+                    {"question": "What is the percentage composition of carbon in CO₂ (molar mass = 44 g/mol)?", "options": ["A. 27.27%", "B. 72.73%", "C. 50%", "D. 33.33%"], "answer": "A. 27.27%"},
+                    {"question": "The catalyst used in the Haber process is:", "options": ["A. Iron", "B. Nickel", "C. Platinum", "D. Copper"], "answer": "A. Iron"},
+                    {"question": "Which of the following is a base?", "options": ["A. HCl", "B. NaOH", "C. H₂SO₄", "D. HNO₃"], "answer": "B. NaOH"},
+                    {"question": "The boiling point of ethanol is higher than that of ethane due to:", "options": ["A. Covalent bonding", "B. Hydrogen bonding", "C. Ionic bonding", "D. Van der Waals forces"], "answer": "B. Hydrogen bonding"},
+                    {"question": "What is the number of moles in 18 g of water (H₂O)?", "options": ["A. 1 mol", "B. 2 mol", "C. 0.5 mol", "D. 3 mol"], "answer": "A. 1 mol"},
+                    {"question": "Which of the following is an allotrope of carbon?", "options": ["A. Graphite", "B. Sulfur", "C. Oxygen", "D. Nitrogen"], "answer": "A. Graphite"},
+                    {"question": "The reaction between an acid and a base produces:", "options": ["A. Salt and water", "B. Gas and water", "C. Salt and gas", "D. Acid and base"], "answer": "A. Salt and water"},
+                    {"question": "What is the molecular formula of benzene?", "options": ["A. C₆H₆", "B. C₆H₁₂", "C. C₅H₁₀", "D. C₇H₈"], "answer": "A. C₆H₆"},
+                    {"question": "The main gas in the atmosphere is:", "options": ["A. Oxygen", "B. Nitrogen", "C. Carbon dioxide", "D. Argon"], "answer": "B. Nitrogen"},
+                    {"question": "What is the color of bromine in its liquid state?", "options": ["A. Colorless", "B. Red-brown", "C. Green", "D. Blue"], "answer": "B. Red-brown"},
+                    {"question": "The process of adding hydrogen to an alkene is called:", "options": ["A. Hydrogenation", "B. Oxidation", "C. Reduction", "D. Halogenation"], "answer": "A. Hydrogenation"},
+                    {"question": "Which of the following is a strong electrolyte?", "options": ["A. Sugar solution", "B. Sodium chloride solution", "C. Ethanol", "D. Acetic acid"], "answer": "B. Sodium chloride solution"}
+                ]
+            }
+        ];
+
+        // Select questions (60 English, 40 each for others)
+        function selectQuestions(data, engCount = 60, otherCount = 40) {
+            let selected = [];
+            data.forEach(subjectData => {
+                const subject = subjectData.subject;
+                const questions = subjectData.questions;
+                const count = subject === 'English' ? Math.min(engCount, questions.length) : Math.min(otherCount, questions.length);
+                const shuffled = questions.sort(() => 0.5 - Math.random());
+                selected.push(...shuffled.slice(0, count).map(q => ({ ...q, subject })));
+            });
+            return selected.sort(() => 0.5 - Math.random());
+        }
+
+        // Format time as HH:MM:SS
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        // Initialize quiz
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let subjectScores = { Physics: [0, 0], Mathematics: [0, 0], English: [0, 0], Chemistry: [0, 0] };
+        let results = [];
+        let timeLeft = 7200; // 2 hours in seconds
+        let timerInterval = null;
+        let startTime = null;
+
+        const startScreen = document.getElementById('start-screen');
+        const questionCard = document.getElementById('question-card');
+        const questionNumber = document.getElementById('question-number');
+        const totalQuestions = document.getElementById('total-questions');
+        const subject = document.getElementById('subject');
+        const questionText = document.getElementById('question-text');
+        const optionTexts = {
+            A: document.getElementById('optionA-text'),
+            B: document.getElementById('optionB-text'),
+            C: document.getElementById('optionC-text'),
+            D: document.getElementById('optionD-text')
+        };
+        const answerForm = document.getElementById('answer-form');
+        const feedback = document.getElementById('feedback');
+        const skipBtn = document.getElementById('skip-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const timerDisplay = document.getElementById('timer');
+        const pagination = document.getElementById('pagination');
+        const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
+
+        // Start quiz
+        document.getElementById('start-btn').addEventListener('click', () => {
+            questions = selectQuestions(questionData);
+            if (questions.length === 0) {
+                alert('No questions available.');
+                return;
+            }
+
+            startScreen.classList.add('d-none');
+            questionCard.classList.remove('d-none');
+            startTime = Date.now();
+            startTimer();
+            displayQuestion();
+        });
+
+        // Start timer
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = formatTime(timeLeft);
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endQuiz('Time is up!');
+                }
+            }, 1000);
+        }
+
+        // Generate pagination
+        function generatePagination() {
+            pagination.innerHTML = '';
+            const pageCount = questions.length;
+            const maxPagesToShow = 5; // Show current page ±2
+            let startPage = Math.max(0, currentQuestionIndex - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(pageCount - 1, startPage + maxPagesToShow - 1);
+            startPage = Math.max(0, endPage - maxPagesToShow + 1);
+
+            // First button
+            const firstItem = document.createElement('li');
+            firstItem.className = 'page-item' + (currentQuestionIndex === 0 ? ' disabled' : '');
+            firstItem.innerHTML = `<a class="page-link" href="#" data-page="0">First</a>`;
+            pagination.appendChild(firstItem);
+
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const pageItem = document.createElement('li');
+                pageItem.className = 'page-item' + (i === currentQuestionIndex ? ' active' : '');
+                pageItem.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i + 1}</a>`;
+                pagination.appendChild(pageItem);
+            }
+
+            // Last button
+            const lastItem = document.createElement('li');
+            lastItem.className = 'page-item' + (currentQuestionIndex === pageCount - 1 ? ' disabled' : '');
+            lastItem.innerHTML = `<a class="page-link" href="#" data-page="${pageCount - 1}">Last</a>`;
+            pagination.appendChild(lastItem);
+
+            // Add click handlers
+            pagination.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (!submitBtn.disabled) { // Allow navigation only when not in feedback mode
+                        const page = parseInt(e.target.dataset.page);
+                        currentQuestionIndex = page;
+                        displayQuestion();
+                    }
+                });
+            });
+        }
+
+        // Display current question
+        function displayQuestion() {
+            const q = questions[currentQuestionIndex];
+            questionNumber.textContent = currentQuestionIndex + 1;
+            totalQuestions.textContent = questions.length;
+            subject.textContent = q.subject;
+            questionText.textContent = q.question;
+            Object.keys(optionTexts).forEach(key => {
+                const opt = q.options.find(o => o.startsWith(`${key}.`));
+                optionTexts[key].textContent = opt ? opt.slice(2).trim() : '';
+            });
+            answerForm.reset();
+            feedback.style.display = 'none';
+            feedback.textContent = '';
+            submitBtn.disabled = false;
+            skipBtn.disabled = false;
+            generatePagination();
+        }
+
+        // Handle submit
+        submitBtn.addEventListener('click', () => {
+            const selected = answerForm.answer.value;
+            if (!selected) {
+                feedback.style.display = 'block';
+                feedback.className = 'feedback alert alert-warning';
+                feedback.textContent = 'Please select an answer.';
+                return;
+            }
+
+            const q = questions[currentQuestionIndex];
+            const userOption = q.options.find(opt => opt.startsWith(`${selected}.`));
+            const correct = userOption === q.answer;
+            subjectScores[q.subject][1]++;
+            if (correct) {
+                score++;
+                subjectScores[q.subject][0]++;
+                feedback.className = 'feedback alert alert-success';
+                feedback.textContent = 'Correct!';
+            } else {
+                feedback.className = 'feedback alert alert-danger';
+                feedback.textContent = `Wrong! Correct answer: ${q.answer}`;
+            }
+            feedback.style.display = 'block';
+            results.push({
+                question: q.question,
+                subject: q.subject,
+                user_answer: userOption || 'Skipped',
+                correct_answer: q.answer,
+                correct
+            });
+
+            submitBtn.disabled = true;
+            skipBtn.disabled = true;
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    displayQuestion();
+                } else {
+                    endQuiz();
+                }
+            }, 1000);
+        });
+
+        // Handle skip
+        skipBtn.addEventListener('click', () => {
+            const q = questions[currentQuestionIndex];
+            subjectScores[q.subject][1]++;
+            results.push({
+                question: q.question,
+                subject: q.subject,
+                user_answer: 'Skipped',
+                correct_answer: q.answer,
+                correct: false
+            });
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+            } else {
+                endQuiz();
+            }
+        });
+
+        // End quiz
+        function endQuiz(message = 'Quiz completed!') {
+            clearInterval(timerInterval);
+            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+            questionCard.classList.add('d-none');
+            pagination.classList.add('d-none');
+            document.getElementById('total-score').textContent = `${score}/${questions.length} (${(score/questions.length*100).toFixed(2)}%)`;
+            document.getElementById('time-taken').textContent = formatTime(timeTaken);
+            const subjectScoresList = document.getElementById('subject-scores');
+            subjectScoresList.innerHTML = '';
+            Object.entries(subjectScores).forEach(([subj, [correct, total]]) => {
+                if (total > 0) {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.textContent = `${subj}: ${correct}/${total} (${(correct/total*100).toFixed(2)}%)`;
+                    subjectScoresList.appendChild(li);
+                }
+            });
+            const detailedResults = document.getElementById('detailed-results');
+            detailedResults.innerHTML = '';
+            results.forEach((res, i) => {
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'accordion-item';
+                accordionItem.innerHTML = `
+                    <h2 class="accordion-header" id="heading${i}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${i}" aria-expanded="false" aria-controls="collapse${i}">
+                            Question ${i+1} (${res.subject})
+                        </button>
+                    </h2>
+                    <div id="collapse${i}" class="accordion-collapse collapse" aria-labelledby="heading${i}" data-bs-parent="#detailed-results">
+                        <div class="accordion-body">
+                            <p><strong>Question:</strong> ${res.question}</p>
+                            <p><strong>Your Answer:</strong> ${res.user_answer}</p>
+                            <p><strong>Correct Answer:</strong> ${res.correct_answer}</p>
+                            <p><strong>Result:</strong> ${res.correct ? 'Correct' : 'Incorrect'}</p>
+                        </div>
+                    </div>
+                `;
+                detailedResults.appendChild(accordionItem);
+            });
+            resultsModal.show();
+            saveResults(message, timeTaken);
+        }
+
+        // Save results
+        function saveResults(message, timeTaken) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '');
+            const resultText = [
+                `JAMB CBT Practice Session Results`,
+                `Date: ${new Date().toLocaleString()}`,
+                `Message: ${message}`,
+                `Total Score: ${score}/${questions.length} (${(score/questions.length*100).toFixed(2)}%)`,
+                `Time Taken: ${formatTime(timeTaken)}`,
+                `\nSubject Scores:`,
+                ...Object.entries(subjectScores).filter(([_, [__, total]]) => total > 0).map(([subj, [correct, total]]) => `${subj}: ${correct}/${total} (${(correct/total*100).toFixed(2)}%)`),
+                `\nDetailed Results:`,
+                ...results.map((res, i) => [
+                    `Question ${i+1} (${res.subject}):`,
+                    res.question,
+                    `Your Answer: ${res.user_answer}`,
+                    `Correct Answer: ${res.correct_answer}`,
+                    `Result: ${res.correct ? 'Correct' : 'Incorrect'}`,
+                    ''
+                ].join('\n'))
+            ].join('\n');
+
+            localStorage.setItem(`jamb_results_${timestamp}`, resultText);
+            document.getElementById('download-btn').onclick = () => {
+                const blob = new Blob([resultText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `jamb_results_${timestamp}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        }
+    </script>
+</body>
+</html>
